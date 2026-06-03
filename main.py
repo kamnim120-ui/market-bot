@@ -4,117 +4,136 @@ import schedule
 import time
 from telegram.ext import Updater, CommandHandler
 
-# =========================
-# CONFIG
-# =========================
+# =========================================
+# YOUR CONFIG
+# =========================================
 
-BOT_TOKEN = "YOUR_BOT_TOKEN"
-CHAT_ID = "YOUR_CHAT_ID"
-NEWS_API = "YOUR_NEWS_API"
+BOT_TOKEN = "8268514632:AAFnUdnuodljVYJCC12MF1-wWMFNE1AeS50"
+CHAT_ID = "5508263164"
+NEWS_API = "e417c06afa274a45865f957526a6d10b"
 
-# =========================
-# TELEGRAM
-# =========================
+# =========================================
+# TELEGRAM SETUP
+# =========================================
 
 updater = Updater(BOT_TOKEN, use_context=True)
 bot = updater.bot
 
-# =========================
+# =========================================
 # LIVE MARKET DATA
-# =========================
+# =========================================
 
 def get_index_price(symbol):
+
     try:
-        data = yf.Ticker(symbol)
-        hist = data.history(period="1d")
+
+        ticker = yf.Ticker(symbol)
+
+        hist = ticker.history(period="1d")
 
         price = round(hist["Close"].iloc[-1], 2)
+
         return price
 
     except:
+
         return "N/A"
 
-# =========================
+# =========================================
 # MARKET REPORT
-# =========================
+# =========================================
 
 def get_market_report():
 
     nifty = get_index_price("^NSEI")
+
     banknifty = get_index_price("^NSEBANK")
+
     sensex = get_index_price("^BSESN")
 
-    text = f"""
+    report = f"""
 📈 INDIAN MARKET REPORT
 
 🔹 NIFTY : {nifty}
+
 🔹 BANKNIFTY : {banknifty}
+
 🔹 SENSEX : {sensex}
 
 🟢 MARKET MOOD : RISK ON
+
 🟢 FIIs : BUYING
+
 🟢 DIIs : SUPPORTIVE
 
 ⚠️ Follow Risk Management
 ⚠️ Avoid Overtrading
 """
 
-    return text
+    return report
 
-# =========================
+# =========================================
 # MARKET NEWS
-# =========================
+# =========================================
 
 def get_market_news():
 
-    url = f"https://newsapi.org/v2/top-headlines?category=business&country=in&apiKey={NEWS_API}"
+    try:
 
-    response = requests.get(url)
-    data = response.json()
+        url = f"https://newsapi.org/v2/top-headlines?category=business&country=in&apiKey={NEWS_API}"
 
-    articles = data["articles"][:5]
+        response = requests.get(url)
 
-    news = "\n📰 TOP MARKET NEWS\n\n"
+        data = response.json()
 
-    for i, article in enumerate(articles, start=1):
+        articles = data["articles"][:5]
 
-        title = article["title"]
+        news = "\n📰 TOP MARKET NEWS\n\n"
 
-        news += f"{i}. {title}\n\n"
+        for i, article in enumerate(articles, start=1):
 
-    return news
+            title = article["title"]
 
-# =========================
-# SEND REPORT
-# =========================
+            news += f"{i}. {title}\n\n"
+
+        return news
+
+    except Exception as e:
+
+        return f"News Error: {e}"
+
+# =========================================
+# SEND DAILY REPORT
+# =========================================
 
 def send_daily_report():
 
     try:
 
         report = get_market_report()
+
         news = get_market_news()
 
         final_message = report + "\n" + news
 
         bot.send_message(chat_id=CHAT_ID, text=final_message)
 
-        print("REPORT SENT")
+        print("REPORT SENT SUCCESSFULLY")
 
     except Exception as e:
 
         print("ERROR:", e)
 
-# =========================
+# =========================================
 # COMMANDS
-# =========================
+# =========================================
 
 def start(update, context):
 
     msg = """
 🔥 PROFESSIONAL MARKET BOT 🔥
 
-Commands:
+AVAILABLE COMMANDS:
 
 /news
 /nifty
@@ -125,18 +144,19 @@ Commands:
 
     update.message.reply_text(msg)
 
-# =========================
+# =========================================
 
 def news(update, context):
 
     report = get_market_report()
+
     market_news = get_market_news()
 
     final = report + "\n" + market_news
 
     update.message.reply_text(final)
 
-# =========================
+# =========================================
 
 def nifty(update, context):
 
@@ -144,7 +164,7 @@ def nifty(update, context):
 
     update.message.reply_text(f"📈 NIFTY LIVE : {price}")
 
-# =========================
+# =========================================
 
 def banknifty(update, context):
 
@@ -152,7 +172,7 @@ def banknifty(update, context):
 
     update.message.reply_text(f"🏦 BANKNIFTY LIVE : {price}")
 
-# =========================
+# =========================================
 
 def sensex(update, context):
 
@@ -160,7 +180,7 @@ def sensex(update, context):
 
     update.message.reply_text(f"📊 SENSEX LIVE : {price}")
 
-# =========================
+# =========================================
 
 def help_command(update, context):
 
@@ -176,30 +196,37 @@ def help_command(update, context):
 
     update.message.reply_text(help_text)
 
-# =========================
+# =========================================
 # HANDLERS
-# =========================
+# =========================================
 
 dispatcher = updater.dispatcher
 
 dispatcher.add_handler(CommandHandler("start", start))
+
 dispatcher.add_handler(CommandHandler("news", news))
+
 dispatcher.add_handler(CommandHandler("nifty", nifty))
+
 dispatcher.add_handler(CommandHandler("banknifty", banknifty))
+
 dispatcher.add_handler(CommandHandler("sensex", sensex))
+
 dispatcher.add_handler(CommandHandler("help", help_command))
 
-# =========================
-# AUTO REPORT SCHEDULE
-# =========================
+# =========================================
+# AUTO DAILY REPORT
+# =========================================
 
 schedule.every().day.at("09:00").do(send_daily_report)
 
-# =========================
+# =========================================
 # START BOT
-# =========================
+# =========================================
 
 print("🚀 PROFESSIONAL MARKET BOT RUNNING...")
+
+bot.send_message(chat_id=CHAT_ID, text="🔥 MARKET BOT STARTED SUCCESSFULLY 🔥")
 
 updater.start_polling()
 
